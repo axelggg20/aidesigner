@@ -9,7 +9,7 @@ import React, { useContext } from 'react'
 function Header() {
     const { userDetail, setUserDetail } = useContext(UserDetailContext);
     const { data: session } = useSession();
-    
+
     return (
         <div className='p-5 shadow-sm flex justify-between items-center'>
             <Link href={'/'} className='flex gap-2 items-center'>
@@ -17,10 +17,12 @@ function Header() {
                 <h2 className='font-bold text-lg'>AI Room Design</h2>
             </Link>
 
-            <Link href={'/dashboard/buy-credits'}>
-                <Button variant="ghost" className="rounded-full text-primary">Buy More Credits</Button>
-            </Link>
-            
+            {session?.user && (
+                <Link href={'/dashboard/buy-credits'}>
+                    <Button variant="ghost" className="rounded-full text-primary">Buy More Credits</Button>
+                </Link>
+            )}
+
             <div className='flex gap-7 items-center'>
                 {userDetail?.credits && (
                     <div className='flex gap-2 p-1 items-center bg-slate-200 px-3 rounded-full'>
@@ -28,15 +30,15 @@ function Header() {
                         <h2>{userDetail?.credits}</h2>
                     </div>
                 )}
-                
-                {session?.user && (
+
+                {session?.user ? (
                     <div className="relative group">
                         <button className="flex items-center gap-2">
-                            <Image 
-                                src={session.user.image || '/placeholder.png'} 
-                                width={40} 
-                                height={40} 
-                                alt="User" 
+                            <Image
+                                src={session.user.image || '/placeholder.png'}
+                                width={40}
+                                height={40}
+                                alt="User"
                                 className="rounded-full"
                             />
                         </button>
@@ -53,11 +55,17 @@ function Header() {
                             </button>
                         </div>
                     </div>
+                ) : (
+                    <Link href={'/sign-in'}>
+                        <Button variant="outline">Sign in</Button>
+                    </Link>
                 )}
-                
-                <Link href={'/dashboard'}>
-                    <Button>Dashboard</Button>
-                </Link>
+
+                {session?.user && (
+                    <Link href={'/dashboard'}>
+                        <Button>Dashboard</Button>
+                    </Link>
+                )}
             </div>
         </div>
     )
