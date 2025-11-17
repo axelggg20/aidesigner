@@ -55,9 +55,6 @@ function Header() {
                     </div>
                 )}
                 
-                <Link href={'/dashboard'}>
-                    <Button>Dashboard</Button>
-                </Link>
             </div>
         </div>
     )
