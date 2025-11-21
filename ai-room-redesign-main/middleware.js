@@ -16,10 +16,8 @@ export default auth((req) => {
     return NextResponse.redirect(signInUrl)
   }
 
-  // if user is authenticated and trying to access auth pages, redirect to dashboard
-  if (isAuthenticated && (pathname === '/sign-in' || pathname === '/sign-up')) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
-  }
+  // Allow access to auth pages even if authenticated
+  // Users can sign out and sign in with different account
 
   return NextResponse.next()
 })

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { storage } from "@/config/firebaseConfig";
+import { r2Client, R2_BUCKET_NAME } from "@/config/r2Config";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import axios from "axios";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { NextResponse } from "next/server";
 import Replicate from "replicate";
 
@@ -21,13 +21,20 @@ export async function POST(req) {
         };
         
         const output = await replicate.run("adirik/interior-design:76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38", { input });    
-        // Convert Output Url to BASE64 Image 
-        const base64Image = await ConvertImageToBase64(output);
-        // Save Base64 to Firebase 
-        const fileName = Date.now() + '.png';
-        const storageRef = ref(storage, 'room-redesign/' + fileName);
-        await uploadString(storageRef, base64Image, 'data_url');
-        const downloadUrl = await getDownloadURL(storageRef);
+        // Convert Output Url to Buffer
+        const imageBuffer = await ConvertImageToBuffer(output);
+        // Save to Cloudflare R2
+        const fileName = `room-redesign/${Date.now()}.png`;
+        
+        await r2Client.send(new PutObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: fileName,
+            Body: imageBuffer,
+            ContentType: 'image/png',
+        }));
+        
+        // Construct the public URL for R2
+        const downloadUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
         console.log(downloadUrl);
         // Save All to Database
 
@@ -49,9 +56,7 @@ export async function POST(req) {
     }
 }
 
-async function ConvertImageToBase64(imageUrl){
-    const resp=await axios.get(imageUrl,{responseType:'arraybuffer'});
-    const base64ImageRaw=Buffer.from(resp.data).toString('base64');
-
-    return "data:image/png;base64,"+base64ImageRaw;
+async function ConvertImageToBuffer(imageUrl){
+    const resp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    return Buffer.from(resp.data);
 }

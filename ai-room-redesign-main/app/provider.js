@@ -1,27 +1,27 @@
 "use client"
-import { useSession } from 'next-auth/react'
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { UserDetailContext } from './_context/UserDetailContext';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
+import { SessionProvider, useSession } from 'next-auth/react';
 
-function Provider({ children }) {
-    const { data: session, status } = useSession();
+function ProviderContent({ children }) {
     const [userDetail, setUserDetail] = useState(null);
+    const { data: session } = useSession();
     
     useEffect(() => {
         if (session?.user) {
-            VerifyUser();
+            VerifyUser(session.user);
         }
-    }, [session])
+    }, [session]);
     
     /**
      * verify User and sync with database
      */
-    const VerifyUser = async () => {
+    const VerifyUser = async (user) => {
         try {
             const dataResult = await axios.post('/api/verify-user', {
-                user: session.user
+                user: user
             });
             setUserDetail(dataResult.data.result);
         } catch (error) {
@@ -37,6 +37,16 @@ function Provider({ children }) {
                 </div>
             </PayPalScriptProvider>
         </UserDetailContext.Provider>
+    )
+}
+
+function Provider({ children }) {
+    return (
+        <SessionProvider>
+            <ProviderContent>
+                {children}
+            </ProviderContent>
+        </SessionProvider>
     )
 }
 

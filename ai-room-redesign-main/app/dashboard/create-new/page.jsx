@@ -6,8 +6,6 @@ import DesignType from './_components/DesignType'
 import AdditionalReq from './_components/AdditionalReq'
 import { Button } from '@/components/ui/button'
 import axios from 'axios'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { storage } from '@/config/firebaseConfig'
 import { useSession } from 'next-auth/react'
 import CustomLoading from './_components/CustomLoading'
 import AiOutputDialog from '../_components/AiOutputDialog'
@@ -53,20 +51,26 @@ function CreateNew() {
   }
 
   const SaveRawImageToFirebase = async () => {
-    // Save Raw File Image to Firebase 
+    // Save Raw File Image to R2 via API
     const fileName = Date.now() + "_raw.png";
-    const imageRef = ref(storage, 'room-redesign/' + fileName);
-
-    await uploadBytes(imageRef, formData.image).then(resp => {
-      console.log('File Uploaded...')
-    })
     
-    // Uploaded File Image URL
-    const downloadUrl = await getDownloadURL(imageRef);
+    // Convert image to base64
+    const reader = new FileReader();
+    const base64Image = await new Promise((resolve) => {
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(formData.image);
+    });
+
+    // Upload to R2 via API
+    const uploadResponse = await axios.post('/api/upload-image', {
+      image: base64Image,
+      fileName: fileName
+    });
+
+    const downloadUrl = uploadResponse.data.url;
     console.log(downloadUrl);
     setOrgImage(downloadUrl);
     return downloadUrl;
-
   }
 
   /**
